@@ -7,11 +7,13 @@ import imp
 import logging
 import re
 
+from django.apps import AppConfig
 from django.conf import settings
 from django.template.base import Origin, TemplateDoesNotExist
 from django.template.context import get_standard_processors
 from django.template.loader import BaseLoader
 from django.utils.importlib import import_module
+import django
 
 import jinja2
 
@@ -55,8 +57,10 @@ def get_env():
             try:
                 loader(p)
             except ImportError:
-                # Django 1.7 allows for speciying a class name in INSTALLED_APPS
-                p = p.rsplit('.', 2)[0]
+                # Django 1.7 allows for speciying a path to an AppConfig class
+                if django.VERSION[:2] >= (1, 7):
+                    app_config = AppConfig.create(p)
+                    p = app_config.name
             finally:
                 loaders.append(loader(p))
 
@@ -115,9 +119,10 @@ def load_helpers():
         try:
             app_path = import_module(app).__path__
         except ImportError:
-            # Django 1.7 allows for speciying a class name in INSTALLED_APPS
-            app = app.rsplit('.', 2)[0]
-            app_path = import_module(app).__path__
+            # Django 1.7 allows for speciying a path to an AppConfig class
+            if django.VERSION[:2] >= (1, 7):
+                app_config = AppConfig.create(app)
+                app_path = app_config.name
         except AttributeError:
             continue
 
