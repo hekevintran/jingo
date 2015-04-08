@@ -49,7 +49,16 @@ def get_env():
     # TEMPLATE_DIRS and packages in INSTALLED_APPS.
     x = ((jinja2.FileSystemLoader, settings.TEMPLATE_DIRS),
          (jinja2.PackageLoader, settings.INSTALLED_APPS))
-    loaders = [loader(p) for loader, places in x for p in places]
+    loaders = []
+    for loader, places in x:
+        for p in places:
+            try:
+                loader(p)
+            except ImportError:
+                # Django 1.7 allows for speciying a class name in INSTALLED_APPS
+                p = p.rsplit('.', 2)[0]
+            finally:
+                loaders.append(loader(p))
 
     opts = {'trim_blocks': True,
             'extensions': ['jinja2.ext.i18n'],
@@ -104,6 +113,10 @@ def load_helpers():
 
     for app in settings.INSTALLED_APPS:
         try:
+            app_path = import_module(app).__path__
+        except ImportError:
+            # Django 1.7 allows for speciying a class name in INSTALLED_APPS
+            app = app.rsplit('.', 2)[0]
             app_path = import_module(app).__path__
         except AttributeError:
             continue
