@@ -7,7 +7,6 @@ import imp
 import logging
 import re
 
-from django.apps import AppConfig
 from django.conf import settings
 from django.template.base import Origin, TemplateDoesNotExist
 from django.template.context import get_standard_processors
@@ -59,6 +58,7 @@ def get_env():
             except ImportError:
                 # Django 1.7 allows for speciying a path to an AppConfig class
                 if django.VERSION[:2] >= (1, 7):
+                    from django.apps import AppConfig
                     app_config = AppConfig.create(p)
                     p = app_config.name
             finally:
@@ -121,6 +121,7 @@ def load_helpers():
         except ImportError:
             # Django 1.7 allows for speciying a path to an AppConfig class
             if django.VERSION[:2] >= (1, 7):
+                from django.apps import AppConfig
                 app_config = AppConfig.create(app)
                 app_path = app_config.name
         except AttributeError:
